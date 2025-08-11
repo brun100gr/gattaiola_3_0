@@ -1,75 +1,112 @@
 #include <WiFi.h>
 
-// Your WiFi credentials
-const char* WIFI_SSID = "YourWiFiSSID";
-const char* WIFI_PASSWORD = "YourWiFiPassword";
+// ===============================
+// WiFi network list
+// ===============================
+// You can add as many as you want here
+struct WiFiNetwork {
+  const char* ssid;
+  const char* password;
+};
 
-// Variables to track WiFi connection
-unsigned long wifiStartTime = 0;        // When we started trying to connect
-const unsigned long wifiTimeout = 10000; // Max time to try (ms)
-bool wifiConnecting = false;            // Are we currently trying to connect?
+WiFiNetwork networks[] = {
+  { "WiFiHome", "HomePassword" },
+  { "WiFiOffice", "OfficePassword" },
+  { "WiFiHotspot", "HotspotPassword" }
+};
 
-// This is another example "task" that will run in loop()
-// while WiFi is trying to connect
+const int networkCount = sizeof(networks) / sizeof(networks[0]);
+
+// ===============================
+// Connection variables
+// ===============================
+int currentNetworkIndex = 0;
+bool wifiConnecting = false;
+unsigned long wifiStartTime = 0;
+const unsigned long wifiTimeout = 8000; // milliseconds
+
+// ===============================
+// Example parallel task variables
+// ===============================
 unsigned long lastBlinkTime = 0;
 bool ledState = false;
-const int ledPin = 2; // Built-in LED on many ESP32 boards
+const int ledPin = 2; // Built-in LED pin for ESP32
 
+// ===============================
+// Start connection to the current network
+// ===============================
 void startWiFiConnection() {
-  Serial.println("Starting WiFi connection...");
-  WiFi.mode(WIFI_STA); // Station mode (client)
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Trying to connect to: ");
+  Serial.println(networks[currentNetworkIndex].ssid);
+
+  WiFi.mode(WIFI_STA); // Station mode
+  WiFi.begin(networks[currentNetworkIndex].ssid, networks[currentNetworkIndex].password);
+  
   wifiStartTime = millis();
   wifiConnecting = true;
 }
 
+// ===============================
+// Try the next network in the list
+// ===============================
+void tryNextNetwork() {
+  currentNetworkIndex++;
+  if (currentNetworkIndex >= networkCount) {
+    Serial.println("No more networks to try. Going offline.");
+    wifiConnecting = false;
+    return;
+  }
+  startWiFiConnection();
+}
+
+// ===============================
+// Setup
+// ===============================
 void setup() {
   Serial.begin(115200);
   pinMode(ledPin, OUTPUT);
 
-  // Start WiFi connection process (non-blocking)
+  // Start with the first network
   startWiFiConnection();
 }
 
+// ===============================
+// Main loop
+// ===============================
 void loop() {
-  // ------------------------------
-  // 1. Handle WiFi connection state
-  // ------------------------------
+  // 1. Handle WiFi connection process
   if (wifiConnecting) {
     wl_status_t status = WiFi.status();
 
     if (status == WL_CONNECTED) {
-      Serial.print("Connected to WiFi! IP address: ");
+      Serial.print("Connected to ");
+      Serial.print(networks[currentNetworkIndex].ssid);
+      Serial.print(" | IP: ");
       Serial.println(WiFi.localIP());
-      wifiConnecting = false; // Done connecting
+      wifiConnecting = false; // Stop connection attempts
     }
     else if (millis() - wifiStartTime > wifiTimeout) {
-      Serial.println("WiFi connection attempt timed out.");
+      Serial.print("Failed to connect to: ");
+      Serial.println(networks[currentNetworkIndex].ssid);
       wifiConnecting = false;
-      // Here you can retry, connect to another network, or switch to offline mode
+      tryNextNetwork(); // Move to next network
     }
     else {
-      // Still trying...
-      // This runs without blocking
+      // Still trying
       static unsigned long lastStatusPrint = 0;
       if (millis() - lastStatusPrint > 1000) {
-        Serial.println("Still connecting to WiFi...");
+        Serial.println("Connecting...");
         lastStatusPrint = millis();
       }
     }
   }
 
-  // ------------------------------
-  // 2. Example of another task running in parallel
-  // ------------------------------
-  if (millis() - lastBlinkTime > 500) { // Every 500ms
+  // 2. Example of another task (LED blink)
+  if (millis() - lastBlinkTime > 500) {
     ledState = !ledState;
     digitalWrite(ledPin, ledState);
     lastBlinkTime = millis();
   }
 
-  // ------------------------------
-  // 3. You can put more code here
-  // ------------------------------
-  // For example, sensor reading, serial commands, etc.
+  // 3. You can add other non-blocking tasks here
 }
