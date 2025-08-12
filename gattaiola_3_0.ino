@@ -1,19 +1,5 @@
 #include <WiFi.h>
-
-// ===============================
-// WiFi network list
-// ===============================
-// You can add as many as you want here
-struct WiFiNetwork {
-  const char* ssid;
-  const char* password;
-};
-
-WiFiNetwork networks[] = {
-  { "WiFiHome", "HomePassword" },
-  { "WiFiOffice", "OfficePassword" },
-  { "WiFiHotspot", "HotspotPassword" }
-};
+#include "secrets.h"
 
 const int networkCount = sizeof(networks) / sizeof(networks[0]);
 
