@@ -10,4 +10,10 @@ String formatDateTime(DateTime dt) {
   return String(buffer);
 }
 
+String formatTimeStruct(struct tm& timeinfo) {
+  char buffer[25];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
+  return String(buffer);
+}
+
 #endif // UTILITIES_H

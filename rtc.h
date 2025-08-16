@@ -42,10 +42,9 @@ void initializeRTC() {
   Serial.println("°C");
 }
 
-void checkRTCTime() {
+bool checkRTCTime() {
   if (!rtcFound) {
     Serial.println("RTC not available - skipping time check");
-    return;
   }
   
   Serial.println("Checking RTC time validity...");
@@ -58,12 +57,30 @@ void checkRTCTime() {
     Serial.println("✓ RTC time appears valid");
     Serial.print("RTC Time (UTC): ");
     Serial.println(formatDateTime(rtcTime));
+    return true;
   } else {
     rtcTimeValid = false;
     Serial.println("✗ RTC time appears invalid (year < 2020)");
     Serial.print("RTC Time: ");
     Serial.println(formatDateTime(rtcTime));
+    return false;
   }
+}
+
+// Optional: Function to manually set RTC time (useful for testing)
+void setRTCTime(int year, int month, int day, int hour, int minute, int second) {
+  if (!rtcFound) {
+    Serial.println("RTC not available");
+    return;
+  }
+  
+  DateTime newTime(year, month, day, hour, minute, second);
+  rtc.adjust(newTime);
+  
+  Serial.println("RTC time manually set to:");
+  Serial.println(formatDateTime(newTime));
+  
+  rtcTimeValid = true;
 }
 
 #endif // RTC_H
