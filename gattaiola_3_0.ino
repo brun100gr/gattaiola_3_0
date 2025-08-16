@@ -1,6 +1,7 @@
 #include "rtc.h"
 #include "utilities.h"
 #include "sleep.h"
+#include "wifi.h"
 #include <cstdint>
 
 // Configuration constants
@@ -11,7 +12,7 @@ const uint32_t mS_TO_S_FACTOR = 1000;  // Conversion factor for milliseconds to 
 const uint64_t uS_TO_S_FACTOR = 1000000;  // Conversion factor for microseconds to seconds
 
 const uint32_t ONE_SECOND = 1 * mS_TO_S_FACTOR;
-const uint32_t UP_TIME = 30 * mS_TO_S_FACTOR;
+const uint32_t UP_TIME = 300 * mS_TO_S_FACTOR;
 const uint64_t SLEEP_TIME_1_MIN = 60 * uS_TO_S_FACTOR;
 
 const uint32_t LED_BUILTIN = 2;  // Most ESP32 boards have builtin LED on GPIO2
@@ -48,6 +49,9 @@ void setup() {
   // Blink built-in LED in case of error
   if (rtcError) {
     handleLEDBlink();
+
+    // Start the connection process
+    startWiFiConnection();
   }
   
   // Display final status
@@ -57,6 +61,12 @@ void setup() {
 void loop() {
   // Handle LED blinking (non-blocking)
   handleLEDBlink();
+
+  // Handle WiFi state machine (non-blocking)
+  handleWiFiStateMachine();
+
+  // Periodic status check
+  handleStatusCheck();
 
   // Display time every 10 seconds
   static unsigned long lastDisplay = 0;
