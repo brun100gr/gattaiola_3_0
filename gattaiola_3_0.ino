@@ -12,7 +12,7 @@ const uint32_t mS_TO_S_FACTOR = 1000;  // Conversion factor for milliseconds to 
 const uint64_t uS_TO_S_FACTOR = 1000000;  // Conversion factor for microseconds to seconds
 
 const uint32_t ONE_SECOND = 1 * mS_TO_S_FACTOR;
-const uint32_t UP_TIME = 300 * mS_TO_S_FACTOR;
+const uint32_t UP_TIME = 30 * mS_TO_S_FACTOR;
 const uint64_t SLEEP_TIME_1_MIN = 60 * uS_TO_S_FACTOR;
 
 const uint32_t LED_BUILTIN = 2;  // Most ESP32 boards have builtin LED on GPIO2
@@ -76,7 +76,7 @@ void loop() {
     lastDisplay = millis();
   }
   
-  if (millis() - upTime > UP_TIME) {
+  if (millis() - upTime > UP_TIME) && (!rtcError){
     // Enter deep sleep with multiple wake sources
     enterDeepSleep(SLEEP_TIME_1_MIN, true, true);
   }
