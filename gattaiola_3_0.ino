@@ -3,6 +3,7 @@
 #include "sleep.h"
 #include "wifi.h"
 #include <cstdint>
+#include "web_server.h"
 
 // Configuration constants
 #define WAKE_PIN GPIO_NUM_0        // GPIO0 (BOOT button) for external wake
@@ -28,7 +29,7 @@ bool ledState = false;
 
 void setup() {
   Serial.begin(115200);
-  delay(1000);
+  delay(100);
   
   Serial.println("\n=== ESP32 WiFi + NTP + RTC DS3231 Sync ===");
 
@@ -56,6 +57,9 @@ void setup() {
   
   // Display final status
   displayTimeStatus();
+
+  // Initialize web server ---
+  webServerSetup();
 }
 
 void loop() {
@@ -68,6 +72,9 @@ void loop() {
   // Periodic status check
   handleStatusCheck();
 
+  // Handle web server
+  webServerLoop();
+
   // Display time every 10 seconds
   static unsigned long lastDisplay = 0;
   static unsigned long upTime = 0;
@@ -75,8 +82,8 @@ void loop() {
     displayCurrentTimes();
     lastDisplay = millis();
   }
-  
-  if (millis() - upTime > UP_TIME) && (!rtcError){
+
+  if ((millis() - upTime > UP_TIME) && (!rtcError)) {
     // Enter deep sleep with multiple wake sources
     enterDeepSleep(SLEEP_TIME_1_MIN, true, true);
   }
