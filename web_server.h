@@ -59,7 +59,6 @@ SystemTime systemTime = {12, 30, 45, 2024, 8, 16};
 
 // Function prototypes - declaration of all functions used in this program
 void loadConfiguration();      // Load config from NVS memory
-bool connectToSavedWiFi();    // Attempt connection to saved WiFi networks
 void startAccessPoint();      // Start ESP32 as WiFi Access Point
 void printServerInfo();       // Display server connection information
 void updateSystemTime();      // Update internal time counter
@@ -364,49 +363,6 @@ void saveNetworksToPrefs() {
 }
 
 /**
- * Attempt to connect to WiFi using saved network configurations
- * Tries each enabled network in order until connection succeeds
- * @return true if connection successful, false if all networks failed
- */
-bool connectToSavedWiFi() {
-  Serial.println("Trying to connect to saved WiFi networks...");
-  
-  // Try each configured network
-  for (uint8_t i = 0; i < config.networkCount; i++) {
-    // Only try enabled networks with valid SSID
-    if (config.networks[i].enabled && config.networks[i].ssid.length() > 0) {
-      Serial.print("Connecting to: ");
-      Serial.println(config.networks[i].ssid);
-      
-      // Start WiFi connection attempt
-      WiFi.begin(config.networks[i].ssid.c_str(), config.networks[i].password.c_str());
-      
-      // Wait up to 10 seconds for connection (20 attempts * 500ms)
-      uint8_t attempts = 0;
-      while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-      }
-      
-      // Check if connection was successful
-      if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("\n✓ Connected to WiFi!");
-        Serial.print("IP: ");
-        Serial.println(WiFi.localIP());
-        return true; // Success - exit function
-      } else {
-        Serial.println("\n✗ Failed");
-        WiFi.disconnect(); // Clean up failed connection
-      }
-    }
-  }
-  
-  // All networks failed or no networks configured
-  return false;
-}
-
-/**
  * Start ESP32 as WiFi Access Point for initial configuration
  * Creates a hotspot that users can connect to for setup
  */
@@ -415,8 +371,8 @@ void startAccessPoint() {
   
   // Configure ESP32 as Access Point
   WiFi.mode(WIFI_AP);
-  // Create hotspot with SSID "ESP32-Config" and password "12345678"
-  WiFi.softAP("ESP32-Config", "12345678");
+  // Create hotspot with SSID "ESP32-Config" and password ""
+  WiFi.softAP("ESP32-192-168-4.1", "");
   
   // Display Access Point IP address
   Serial.print("Access Point IP: ");
@@ -528,6 +484,9 @@ void webServerSetup() {
 
   // Load previously saved configuration from flash memory
   loadConfiguration();
+
+  // Starts the Wi-Fi Access Point
+  startAccessPoint();
 
   // Configure all web server routes and endpoints
   setupWebServer();

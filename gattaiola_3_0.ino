@@ -6,15 +6,14 @@
 #include "web_server.h"
 
 // Configuration constants
-#define WAKE_PIN GPIO_NUM_0        // GPIO0 (BOOT button) for external wake
-#define WAKE_PIN_LEVEL 0           // Wake when pin goes LOW (button pressed)
-
 const uint32_t mS_TO_S_FACTOR = 1000;  // Conversion factor for milliseconds to seconds
 const uint64_t uS_TO_S_FACTOR = 1000000;  // Conversion factor for microseconds to seconds
 
 const uint32_t ONE_SECOND = 1 * mS_TO_S_FACTOR;
 const uint32_t UP_TIME = 30 * mS_TO_S_FACTOR;
 const uint64_t SLEEP_TIME_1_MIN = 60 * uS_TO_S_FACTOR;
+
+const uint8_t BOOT_BUTTON_PIN = 0;  // GPIO0 (usually the BOOT button)
 
 const uint32_t LED_BUILTIN = 2;  // Most ESP32 boards have builtin LED on GPIO2
 
@@ -37,9 +36,25 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);  // Start with LED OFF
 
-  // Print wake up reason
-  printWakeupReason();
+    // Set BOOT button (usually GPIO0) as input
+  pinMode(BOOT_BUTTON_PIN, INPUT);
 
+  // Get wake up reason
+  esp_sleep_wakeup_cause_t wakeup_reason = getWakeupReason();
+  switch (wakeup_reason) {
+    case ESP_SLEEP_WAKEUP_UNDEFINED:  // Boot after power reset
+      // Read BOOT button state
+      int bootButtonState = digitalRead(BOOT_BUTTON_PIN);
+      Serial.print("BOOT button state: ");
+      Serial.println(bootButtonState == HIGH ? "Released" : "Pressed");
+
+      if (bootButtonState == LOW) {
+        // Initialize web server ---
+        webServerSetup();
+      }
+    break;
+  }
+/*
   // Initialize I2C and RTC
   Wire.begin();
   initializeRTC();
@@ -57,9 +72,7 @@ void setup() {
   
   // Display final status
   displayTimeStatus();
-
-  // Initialize web server ---
-  webServerSetup();
+*/
 }
 
 void loop() {
@@ -67,7 +80,7 @@ void loop() {
   handleLEDBlink();
 
   // Handle WiFi state machine (non-blocking)
-  handleWiFiStateMachine();
+  //handleWiFiStateMachine();
 
   // Periodic status check
   handleStatusCheck();

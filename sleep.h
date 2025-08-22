@@ -20,7 +20,7 @@ RTC_DATA_ATTR int bootCount = 0;  // Variable stored in RTC memory
 
 void configureWakeSources(uint64_t sleepDuration, bool enableTimerWake, bool enableExternalWake);
 void configureGPIOForSleep();
-void printWakeupReason();
+esp_sleep_wakeup_cause_t getWakeupReason();
 void displaySleepInfo(uint64_t sleepDuration, bool enableTimerWake, bool enableExternalWake);
 
 /**
@@ -111,9 +111,9 @@ void configureGPIOForSleep() {
 }
 
 /**
- * Print the reason for wake up
+ * Get the reason for wake up
  */
-void printWakeupReason() {
+esp_sleep_wakeup_cause_t getWakeupReason() {
   esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
   
   Serial.print("Wake up reason: ");
@@ -137,6 +137,7 @@ void printWakeupReason() {
       Serial.printf("Not a deep sleep wake up: %d\n", wakeup_reason);
       break;
   }
+  return wakeup_reason;
 }
 
 /**
