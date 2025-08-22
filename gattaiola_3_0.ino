@@ -21,7 +21,11 @@ const uint32_t LED_BUILTIN = 2;  // Most ESP32 boards have builtin LED on GPIO2
 unsigned long previousMillis = 0;
 const unsigned long BLINK_INTERVAL = 250;  // 250ms = 2Hz (ON 250ms, OFF 250ms)
 
+// Flag to indicate RTC error status
 bool rtcError = true;
+
+// Flag to indicate access point mode status
+bool accessPointMode = false;
 
 // LED state
 bool ledState = false;
@@ -39,6 +43,13 @@ void setup() {
     // Set BOOT button (usually GPIO0) as input
   pinMode(BOOT_BUTTON_PIN, INPUT);
 
+  // Initialize I2C and RTC
+  Wire.begin();
+  initializeRTC();
+  
+  // Check RTC time validity
+  rtcError != checkRTCTime();
+
   // Get wake up reason
   esp_sleep_wakeup_cause_t wakeup_reason = getWakeupReason();
   switch (wakeup_reason) {
@@ -49,30 +60,27 @@ void setup() {
       Serial.println(bootButtonState == HIGH ? "Released" : "Pressed");
 
       if (bootButtonState == LOW) {
+        // Enter access point mode
+        accessPointMode = true;
+
         // Initialize web server ---
         webServerSetup();
       }
     break;
   }
-/*
-  // Initialize I2C and RTC
-  Wire.begin();
-  initializeRTC();
-  
-  // Check RTC time validity
-  rtcError != checkRTCTime();
 
   // Blink built-in LED in case of error
   if (rtcError) {
     handleLEDBlink();
 
-    // Start the connection process
-    startWiFiConnection();
+    if (!accessPointMode) {
+      // Start the connection process
+      startWiFiConnection();
+    }
   }
   
   // Display final status
   displayTimeStatus();
-*/
 }
 
 void loop() {
@@ -83,7 +91,7 @@ void loop() {
   //handleWiFiStateMachine();
 
   // Periodic status check
-  handleStatusCheck();
+  //handleStatusCheck();
 
   // Handle web server
   webServerLoop();
